@@ -5,7 +5,7 @@
              xmlns:local="clr-namespace:ObjectDetector" 
              x:Class="ObjectDetector.MainPage"
              Padding="20"
-             BackgroundColor="DarkSlateGray">
+             BackgroundColor="Black">
     <ContentPage.BindingContext>
         <local:MainViewModel/>
     </ContentPage.BindingContext>

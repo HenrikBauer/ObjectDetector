@@ -3,6 +3,7 @@ using Xamarin.Forms;
 using SkiaSharp.Views.Forms;
 using SkiaSharp;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction.Models;
+using Humanizer;
 
 namespace ObjectDetector
 {
@@ -56,7 +57,7 @@ namespace ObjectDetector
             var paint = new SKPaint
             {
                 Style = SKPaintStyle.Fill,
-                Color = SKColors.DarkSlateGray
+                Color = SKColors.Black
             };
 
             canvas.DrawRect(info.Rect, paint);
@@ -113,12 +114,14 @@ namespace ObjectDetector
                 Color = SKColors.White
             };
 
-            var textWidth = textPaint.MeasureText(prediction.TagName);
+            var text = prediction.TagName.Humanize();
+
+            var textWidth = textPaint.MeasureText(text);
             textPaint.TextSize = 0.9f * scaledBoxWidth * textPaint.TextSize / textWidth;
 
             // Find the text bounds
             var textBounds = new SKRect();
-            textPaint.MeasureText(prediction.TagName, ref textBounds);
+            textPaint.MeasureText(text, ref textBounds);
 
             var xText = (startLeft + (scaledBoxWidth / 2)) - textBounds.MidX;
             var yText = (startTop + (scaledBoxHeight / 2)) + textBounds.MidY;
@@ -130,12 +133,12 @@ namespace ObjectDetector
                 MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 0.57735f * radius + 0.5f)
             };
 
-            canvas.DrawText(prediction.TagName,
+            canvas.DrawText(text,
                             xText + xDrop,
                             yText + yDrop,
                             blurPaint);
 
-            canvas.DrawText(prediction.TagName,
+            canvas.DrawText(text,
                             xText,
                             yText,
                             textPaint);

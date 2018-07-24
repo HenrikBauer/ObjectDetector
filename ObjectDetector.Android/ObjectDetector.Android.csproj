@@ -64,6 +64,12 @@
     <PackageReference Include="SkiaSharp.Views.Forms">
       <Version>1.60.2</Version>
     </PackageReference>
+    <PackageReference Include="Xam.Plugins.TextToSpeech">
+      <Version>4.0.0.7</Version>
+    </PackageReference>
+    <PackageReference Include="Humanizer">
+      <Version>2.4.2</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />

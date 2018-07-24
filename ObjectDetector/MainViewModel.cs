@@ -5,10 +5,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Humanizer;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction.Models;
 using Plugin.Media;
 using Plugin.Media.Abstractions;
+using Plugin.TextToSpeech;
 using SkiaSharp;
 using Xamarin.Forms;
 
@@ -76,11 +78,37 @@ namespace ObjectDetector
                                      .ToList();
 
                 Image = SKBitmap.Decode(photo.GetStream());
+                await SayWhatYouSee();
             }
             finally
             {
                 IsEnabled = true;
             }
+        }
+
+        async Task SayWhatYouSee()
+        {
+            var text = "";
+
+            if (Predictions.Any())
+            {
+                if (Predictions.Count == 1)
+                    text = $"I see {Predictions[0].TagName.Humanize()}";
+                else
+                {
+                    text = "I see ";
+                    for (var i = 0; i < Predictions.Count - 1; ++i)
+                        text += Predictions[i].TagName.Humanize() + ", ";
+                    text += $"and {Predictions.Last().TagName.Humanize()}";
+
+                }
+            }
+            else
+            {
+                text = "I don't see anything I recognise";
+            }
+
+            await CrossTextToSpeech.Current.Speak(text);
         }
     }
 }
