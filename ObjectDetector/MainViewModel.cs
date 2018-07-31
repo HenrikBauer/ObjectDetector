@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Humanizer;
@@ -16,33 +14,26 @@ using Xamarin.Forms;
 
 namespace ObjectDetector
 {
-	public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : BaseViewModel
     {
-        bool Set<T>(ref T field, T value, [CallerMemberName]string propertyName = null)
-        {
-            if (Equals(field, value)) return false;
-            field = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            return true;
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
         PredictionEndpoint endpoint;
 
         public MainViewModel()
         {
             TakePhotoCommand = new Command(async () => await TakePhoto());
+            PickPhotoCommand = new Command(async () => await PickPhoto());
+
             endpoint = new PredictionEndpoint
             {
                 ApiKey = ApiKeys.PredictionKey
             };
         }
 
-        SKBitmap bitmap;
+        SKBitmap image;
         public SKBitmap Image
         {
-            get => bitmap;
-            set => Set(ref bitmap, value);
+            get => image;
+            set => Set(ref image, value);
         }
 
         bool isEnabled = true;
@@ -52,6 +43,19 @@ namespace ObjectDetector
             set => Set(ref isEnabled, value);
         }
 
+        double probability = .75;
+        public double Probability
+        {
+            get => probability;
+            set
+            {
+                if (Set(ref probability, value))
+                    OnPropertyChanged(nameof(ProbabilityText));
+            }
+        }
+
+        public string ProbabilityText => $"{Probability:P0}";
+
         List<PredictionModel> predictions = new List<PredictionModel>();
         public List<PredictionModel> Predictions
         {
@@ -60,25 +64,32 @@ namespace ObjectDetector
         }
 
         public ICommand TakePhotoCommand { get; }
+        public ICommand PickPhotoCommand { get; }
 
-        async Task TakePhoto()
+        Task TakePhoto() => GetPhoto(() => CrossMedia.Current.TakePhotoAsync(new StoreCameraMediaOptions { PhotoSize = PhotoSize.Small }));
+        Task PickPhoto() => GetPhoto(() => CrossMedia.Current.PickPhotoAsync(new PickMediaOptions { PhotoSize = PhotoSize.Small }));
+
+        async Task GetPhoto(Func<Task<MediaFile>> getPhotoFunc)
         {
             IsEnabled = false;
 
             try
             {
-                var options = new StoreCameraMediaOptions { PhotoSize = PhotoSize.Medium };
-                var photo = await CrossMedia.Current.TakePhotoAsync(options);
+                var photo = await getPhotoFunc();
+                if (photo == null) return;
 
-                var results = await endpoint.PredictImageAsync(Guid.Parse(ApiKeys.ProjectId),
-                                                               photo.GetStream());
+                var results = await endpoint.PredictImageAsync(Guid.Parse(ApiKeys.ProjectId), photo.GetStream());
 
                 Predictions = results.Predictions
-                                     .Where(p => p.Probability > 0.75)
+                                     .Where(p => p.Probability > Probability)
                                      .ToList();
 
                 Image = SKBitmap.Decode(photo.GetStream());
                 await SayWhatYouSee();
+            }
+            catch (Exception ex)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", $"An error occured: {ex.Message}", "OK");
             }
             finally
             {
@@ -90,25 +101,32 @@ namespace ObjectDetector
         {
             var text = "";
 
-            if (Predictions.Any())
+            try
             {
-                if (Predictions.Count == 1)
-                    text = $"I see {Predictions[0].TagName.Humanize()}";
+                if (Predictions.Any())
+                {
+                    if (Predictions.Count == 1)
+                        text = $"I see {Predictions[0].TagName.Humanize()}";
+                    else
+                    {
+                        text = "I see ";
+                        for (var i = 0; i < Predictions.Count - 1; ++i)
+                            text += Predictions[i].TagName.Humanize() + ", ";
+                        text += $"and {Predictions.Last().TagName.Humanize()}";
+
+                    }
+                }
                 else
                 {
-                    text = "I see ";
-                    for (var i = 0; i < Predictions.Count - 1; ++i)
-                        text += Predictions[i].TagName.Humanize() + ", ";
-                    text += $"and {Predictions.Last().TagName.Humanize()}";
-
+                    text = "I don't see anything I recognise";
                 }
-            }
-            else
-            {
-                text = "I don't see anything I recognise";
-            }
 
-            await CrossTextToSpeech.Current.Speak(text);
+                await CrossTextToSpeech.Current.Speak(text);
+            }
+            catch (Exception ex)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", $"An error occured: {ex.Message}", "OK");
+            }
         }
     }
 }

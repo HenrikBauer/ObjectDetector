@@ -4,6 +4,7 @@ using SkiaSharp.Views.Forms;
 using SkiaSharp;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction.Models;
 using Humanizer;
+using System.Linq;
 
 namespace ObjectDetector
 {
@@ -45,10 +46,18 @@ namespace ObjectDetector
 
             canvas.DrawBitmap(vm.Image, rect);
 
-            // draw bounding rectangles
-            foreach (var prediction in vm.Predictions)
+            if (vm.Predictions.All(p => p.BoundingBox != null))
             {
-                DrawBoundingBox(canvas, left, top, scaleWidth, scaleHeight, prediction);
+                // draw bounding rectangles
+                foreach (var prediction in vm.Predictions)
+                {
+                    DrawBoundingBox(canvas, left, top, scaleWidth, scaleHeight, prediction.TagName, prediction.BoundingBox);
+                }
+            }
+            else
+            {
+                var best = vm.Predictions.OrderByDescending(p => p.Probability).First();
+                DrawBoundingBox(canvas, left, top, scaleWidth, scaleHeight, best.TagName, new BoundingBox(0, 0, 1, 1));
             }
         }
 
@@ -63,13 +72,12 @@ namespace ObjectDetector
             canvas.DrawRect(info.Rect, paint);
         }
 
-        static void DrawBoundingBox(SKCanvas canvas, float left, float top, float width, float height, PredictionModel prediction)
+        static void DrawBoundingBox(SKCanvas canvas, float left, float top, float width, float height, string tag, BoundingBox box)
         {
             const float radius = 2.0f;
             const float xDrop = 2.0f;
             const float yDrop = 2.0f;
 
-            var box = prediction.BoundingBox;
             var path = new SKPath();
 
             var scaledBoxLeft = width * (float)box.Left;
@@ -114,7 +122,7 @@ namespace ObjectDetector
                 Color = SKColors.White
             };
 
-            var text = prediction.TagName.Humanize();
+            var text = tag.Humanize();
 
             var textWidth = textPaint.MeasureText(text);
             textPaint.TextSize = 0.9f * scaledBoxWidth * textPaint.TextSize / textWidth;

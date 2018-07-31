@@ -3,20 +3,41 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
              xmlns:skia="clr-namespace:SkiaSharp.Views.Forms;assembly=SkiaSharp.Views.Forms"
              xmlns:local="clr-namespace:ObjectDetector" 
+             xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core" 
+             ios:Page.UseSafeArea="true"
              x:Class="ObjectDetector.MainPage"
-             Padding="20"
              BackgroundColor="Black">
     <ContentPage.BindingContext>
         <local:MainViewModel/>
     </ContentPage.BindingContext>
-    <Grid>
+    <Grid RowSpacing="20" ColumnSpacing="20" Padding="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <skia:SKCanvasView x:Name="ImageCanvas" PaintSurface="OnCanvasViewPaintSurface"/>
-        <Button Grid.Row="1" Text="Take photo" BackgroundColor="Green" 
-                TextColor="White" Margin="0,20,0,0" Command="{Binding TakePhotoCommand}"
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <skia:SKCanvasView x:Name="ImageCanvas" 
+                           Grid.ColumnSpan="2"
+                           PaintSurface="OnCanvasViewPaintSurface"/>
+
+        <StackLayout Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalOptions="Fill" Spacing="20">
+            <Slider Minimum="0" Maximum="1" ThumbColor="White" MinimumTrackColor="#FFA0A0"
+                    MaximumTrackColor="#A0A0FF" HorizontalOptions="FillAndExpand"
+                    Value="{Binding Probability}" VerticalOptions="Center"
+                    IsEnabled="{Binding IsEnabled}"/>
+            <Label Text="{Binding ProbabilityText}" TextColor="White" HorizontalOptions="End"
+                   VerticalOptions="Center"/>
+        </StackLayout>
+
+        <Button Grid.Row="2" Grid.Column="0" Text="Take photo" BackgroundColor="Green" 
+                TextColor="White" Command="{Binding TakePhotoCommand}"
+                IsEnabled="{Binding IsEnabled}"/>
+        <Button Grid.Row="2" Grid.Column="1" Text="Choose photo" BackgroundColor="Green" 
+                TextColor="White" Command="{Binding PickPhotoCommand}"
                 IsEnabled="{Binding IsEnabled}"/>
     </Grid>
 </ContentPage>
