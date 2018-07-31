@@ -10,6 +10,10 @@ namespace ObjectDetector
 {
     public partial class MainPage : ContentPage
     {
+        const float radius = 2.0f;
+        const float xDrop = 2.0f;
+        const float yDrop = 2.0f;
+
         public MainPage()
         {
             InitializeComponent();
@@ -18,7 +22,9 @@ namespace ObjectDetector
             vm.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(MainViewModel.Image))
+                {
                     ImageCanvas.InvalidateSurface();
+                }
             };
         }
 
@@ -48,16 +54,15 @@ namespace ObjectDetector
 
             if (vm.Predictions.All(p => p.BoundingBox != null))
             {
-                // draw bounding rectangles
                 foreach (var prediction in vm.Predictions)
                 {
-                    DrawBoundingBox(canvas, left, top, scaleWidth, scaleHeight, prediction.TagName, prediction.BoundingBox);
+                    LabelPrediction(canvas, prediction.TagName, prediction.BoundingBox, left, top, scaleWidth, scaleHeight);
                 }
             }
             else
             {
                 var best = vm.Predictions.OrderByDescending(p => p.Probability).First();
-                DrawBoundingBox(canvas, left, top, scaleWidth, scaleHeight, best.TagName, new BoundingBox(0, 0, 1, 1));
+                LabelPrediction(canvas, best.TagName, new BoundingBox(0, 0, 1, 1), left, top, scaleWidth, scaleHeight, false);
             }
         }
 
@@ -72,50 +77,21 @@ namespace ObjectDetector
             canvas.DrawRect(info.Rect, paint);
         }
 
-        static void DrawBoundingBox(SKCanvas canvas, float left, float top, float width, float height, string tag, BoundingBox box)
+        static void LabelPrediction(SKCanvas canvas, string tag, BoundingBox box, float left, float top, float width, float height, bool addBox = true)
         {
-            const float radius = 2.0f;
-            const float xDrop = 2.0f;
-            const float yDrop = 2.0f;
-
-            var path = new SKPath();
-
-            var scaledBoxLeft = width * (float)box.Left;
+            var scaledBoxLeft = left + (width * (float)box.Left);
             var scaledBoxWidth = width * (float)box.Width;
-            var scaledBoxTop = height * (float)box.Top;
+            var scaledBoxTop = top + (height * (float)box.Top);
             var scaledBoxHeight = height * (float)box.Height;
 
-            var startLeft = left + scaledBoxLeft;
-            var startTop = top + scaledBoxTop;
+            if (addBox)
+                DrawBox(canvas, scaledBoxLeft, scaledBoxTop, scaledBoxWidth, scaledBoxHeight);
 
-            path.MoveTo(startLeft, startTop);
+            DrawText(canvas, tag, scaledBoxLeft, scaledBoxTop, scaledBoxWidth, scaledBoxHeight);
+        }
 
-            path.LineTo(startLeft + scaledBoxWidth, startTop);
-            path.LineTo(startLeft + scaledBoxWidth, startTop + scaledBoxHeight);
-            path.LineTo(startLeft, startTop + scaledBoxHeight);
-            path.LineTo(startLeft, startTop);
-
-            var strokePaint = new SKPaint
-            {
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke,
-                Color = SKColors.White,
-                StrokeWidth = 5,
-                PathEffect = SKPathEffect.CreateDash(new[] { 20f, 20f }, 20f)
-            };
-
-            var blurStrokePaint = new SKPaint
-            {
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 5,
-                PathEffect = SKPathEffect.CreateDash(new[] { 20f, 20f }, 20f),
-                IsAntialias = true,
-                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 0.57735f * radius + 0.5f)
-            };
-
-            canvas.DrawPath(path, blurStrokePaint);
-            canvas.DrawPath(path, strokePaint);
-
+        static void DrawText(SKCanvas canvas, string tag, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
+        {
             var textPaint = new SKPaint
             {
                 IsAntialias = true,
@@ -150,6 +126,39 @@ namespace ObjectDetector
                             xText,
                             yText,
                             textPaint);
+        }
+
+        private static void DrawBox(SKCanvas canvas, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
+        {
+            var path = new SKPath();
+
+            path.MoveTo(startLeft, startTop);
+
+            path.LineTo(startLeft + scaledBoxWidth, startTop);
+            path.LineTo(startLeft + scaledBoxWidth, startTop + scaledBoxHeight);
+            path.LineTo(startLeft, startTop + scaledBoxHeight);
+            path.LineTo(startLeft, startTop);
+
+            var strokePaint = new SKPaint
+            {
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                Color = SKColors.White,
+                StrokeWidth = 5,
+                PathEffect = SKPathEffect.CreateDash(new[] { 20f, 20f }, 20f)
+            };
+
+            var blurStrokePaint = new SKPaint
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 5,
+                PathEffect = SKPathEffect.CreateDash(new[] { 20f, 20f }, 20f),
+                IsAntialias = true,
+                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 0.57735f * radius + 0.5f)
+            };
+
+            canvas.DrawPath(path, blurStrokePaint);
+            canvas.DrawPath(path, strokePaint);
         }
     }
 
