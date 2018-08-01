@@ -4,9 +4,10 @@
              xmlns:skia="clr-namespace:SkiaSharp.Views.Forms;assembly=SkiaSharp.Views.Forms"
              xmlns:local="clr-namespace:ObjectDetector" 
              xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core" 
+             xmlns:lottie="clr-namespace:Lottie.Forms;assembly=Lottie.Forms" 
              ios:Page.UseSafeArea="true"
              x:Class="ObjectDetector.MainPage"
-             BackgroundColor="Black">
+             BackgroundColor="White">
     <ContentPage.BindingContext>
         <local:MainViewModel/>
     </ContentPage.BindingContext>
@@ -24,20 +25,33 @@
                            Grid.ColumnSpan="2"
                            PaintSurface="OnCanvasViewPaintSurface"/>
 
-        <StackLayout Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalOptions="Fill" Spacing="20">
-            <Slider Minimum="0" Maximum="1" ThumbColor="White" MinimumTrackColor="#FFA0A0"
-                    MaximumTrackColor="#A0A0FF" HorizontalOptions="FillAndExpand"
+        <StackLayout Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalOptions="Fill" Spacing="10">
+            <Label Text="Threshold" TextColor="DarkSlateBlue" HorizontalOptions="Start"
+                   VerticalOptions="Center"/>
+            <Slider Minimum="0" Maximum="1" ThumbColor="DarkSlateBlue" MinimumTrackColor="#FFA0A0"
+                    MaximumTrackColor="#7070FF" HorizontalOptions="FillAndExpand"
                     Value="{Binding Probability}" VerticalOptions="Center"
                     IsEnabled="{Binding IsEnabled}"/>
-            <Label Text="{Binding ProbabilityText}" TextColor="White" HorizontalOptions="End"
+            <Label Text="{Binding ProbabilityText}" TextColor="DarkSlateBlue" HorizontalOptions="End"
                    VerticalOptions="Center"/>
         </StackLayout>
 
-        <Button Grid.Row="2" Grid.Column="0" Text="Take photo" BackgroundColor="Green" 
+        <Button Grid.Row="2" Grid.Column="0" Text="Take photo" BackgroundColor="DarkSlateBlue" 
                 TextColor="White" Command="{Binding TakePhotoCommand}"
                 IsEnabled="{Binding IsEnabled}"/>
-        <Button Grid.Row="2" Grid.Column="1" Text="Choose photo" BackgroundColor="Green" 
+        <Button Grid.Row="2" Grid.Column="1" Text="Choose photo" BackgroundColor="DarkSlateBlue" 
                 TextColor="White" Command="{Binding PickPhotoCommand}"
                 IsEnabled="{Binding IsEnabled}"/>
+        
+        <Grid Grid.RowSpan="3" Grid.ColumnSpan="2" IsVisible="{Binding IsBusy}" BackgroundColor="#A0FFFFFF">
+            <lottie:AnimationView Animation="loader.json" 
+                                  IsVisible="{Binding IsBusy}"
+                                  Loop="true" 
+                                  AutoPlay="true"
+                                  HeightRequest="150"
+                                  WidthRequest="150"
+                                  VerticalOptions="Center" 
+                                  HorizontalOptions="Center" />
+        </Grid>
     </Grid>
 </ContentPage>

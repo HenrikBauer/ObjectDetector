@@ -21,7 +21,7 @@ namespace ObjectDetector
             var vm = (MainViewModel)BindingContext;
             vm.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName == nameof(MainViewModel.Image))
+                if (e.PropertyName == nameof(MainViewModel.Image) || e.PropertyName == nameof(vm.Predictions))
                 {
                     ImageCanvas.InvalidateSurface();
                 }
@@ -31,28 +31,37 @@ namespace ObjectDetector
         public void OnCanvasViewPaintSurface(object sender, SKPaintSurfaceEventArgs args)
         {
             var vm = (MainViewModel)BindingContext;
-            if (vm.Image == null) return;
 
             var info = args.Info;
             var canvas = args.Surface.Canvas;
 
             ClearCanvas(info, canvas);
 
-            var scale = Math.Min((float)info.Width / (float)vm.Image.Width, (float)info.Height / (float)vm.Image.Height);
+            if (vm.Image != null)
+            {
+                var scale = Math.Min((float)info.Width / (float)vm.Image.Width, (float)info.Height / (float)vm.Image.Height);
 
-            var scaleHeight = scale * vm.Image.Height;
-            var scaleWidth = scale * vm.Image.Width;
+                var scaleHeight = scale * vm.Image.Height;
+                var scaleWidth = scale * vm.Image.Width;
 
-            var top = (info.Height - scaleHeight) / 2;
-            var left = (info.Width - scaleWidth) / 2;
-            var right = left + scaleWidth;
-            var bottom = top + scaleHeight;
+                var top = (info.Height - scaleHeight) / 2;
+                var left = (info.Width - scaleWidth) / 2;
 
-            var rect = new SKRect(left, top, right, bottom);
+                canvas.DrawBitmap(vm.Image, new SKRect(left, top, left + scaleWidth, top + scaleHeight));
+                DrawBorder(canvas, left, top, scaleWidth, scaleHeight);
+                DrawPredictions(vm, canvas, left, top, scaleWidth, scaleHeight);
+            }
+        }
 
-            canvas.DrawBitmap(vm.Image, rect);
+        static void DrawPredictions(MainViewModel vm, SKCanvas canvas, float left, float top, float scaleWidth, float scaleHeight)
+        {
+            if (vm.Predictions == null) return;
 
-            if (vm.Predictions.All(p => p.BoundingBox != null))
+            if (!vm.Predictions.Any())
+            {
+                LabelPrediction(canvas, "Nothing detected", new BoundingBox(0, 0, 1, 1), left, top, scaleWidth, scaleHeight, false);
+            }
+            else if (vm.Predictions.All(p => p.BoundingBox != null))
             {
                 foreach (var prediction in vm.Predictions)
                 {
@@ -71,7 +80,7 @@ namespace ObjectDetector
             var paint = new SKPaint
             {
                 Style = SKPaintStyle.Fill,
-                Color = SKColors.Black
+                Color = SKColors.White
             };
 
             canvas.DrawRect(info.Rect, paint);
@@ -128,16 +137,8 @@ namespace ObjectDetector
                             textPaint);
         }
 
-        private static void DrawBox(SKCanvas canvas, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
+        static void DrawBox(SKCanvas canvas, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
         {
-            var path = new SKPath();
-
-            path.MoveTo(startLeft, startTop);
-
-            path.LineTo(startLeft + scaledBoxWidth, startTop);
-            path.LineTo(startLeft + scaledBoxWidth, startTop + scaledBoxHeight);
-            path.LineTo(startLeft, startTop + scaledBoxHeight);
-            path.LineTo(startLeft, startTop);
 
             var strokePaint = new SKPaint
             {
@@ -147,6 +148,7 @@ namespace ObjectDetector
                 StrokeWidth = 5,
                 PathEffect = SKPathEffect.CreateDash(new[] { 20f, 20f }, 20f)
             };
+            DrawBox(canvas, strokePaint, startLeft, startTop, scaledBoxWidth, scaledBoxHeight);
 
             var blurStrokePaint = new SKPaint
             {
@@ -156,9 +158,40 @@ namespace ObjectDetector
                 IsAntialias = true,
                 MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 0.57735f * radius + 0.5f)
             };
+            DrawBox(canvas, blurStrokePaint, startLeft, startTop, scaledBoxWidth, scaledBoxHeight);
+        }
 
-            canvas.DrawPath(path, blurStrokePaint);
-            canvas.DrawPath(path, strokePaint);
+        static void DrawBorder(SKCanvas canvas, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
+        {
+
+            var strokePaint = new SKPaint
+            {
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                Color = SKColors.DarkSlateBlue,
+                StrokeWidth = 1
+            };
+
+            DrawBox(canvas, strokePaint, startLeft, startTop, scaledBoxWidth, scaledBoxHeight);
+        }
+
+        static void DrawBox(SKCanvas canvas, SKPaint paint, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
+        {
+            var path = CreateBoxPath(startLeft, startTop, scaledBoxWidth, scaledBoxHeight);
+            canvas.DrawPath(path, paint);
+        }
+
+        static SKPath CreateBoxPath(float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
+        {
+            var path = new SKPath();
+            path.MoveTo(startLeft, startTop);
+
+            path.LineTo(startLeft + scaledBoxWidth, startTop);
+            path.LineTo(startLeft + scaledBoxWidth, startTop + scaledBoxHeight);
+            path.LineTo(startLeft, startTop + scaledBoxHeight);
+            path.LineTo(startLeft, startTop);
+
+            return path;
         }
     }
 

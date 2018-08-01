@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -40,8 +41,14 @@ namespace ObjectDetector
         public bool IsEnabled
         {
             get => isEnabled;
-            set => Set(ref isEnabled, value);
+            set
+            {
+                if (Set(ref isEnabled, value))
+                    OnPropertyChanged(nameof(IsBusy));
+
+            }
         }
+        public bool IsBusy => !IsEnabled;
 
         double probability = .75;
         public double Probability
@@ -56,7 +63,7 @@ namespace ObjectDetector
 
         public string ProbabilityText => $"{Probability:P0}";
 
-        List<PredictionModel> predictions = new List<PredictionModel>();
+        List<PredictionModel> predictions;
         public List<PredictionModel> Predictions
         {
             get => predictions;
@@ -66,25 +73,26 @@ namespace ObjectDetector
         public ICommand TakePhotoCommand { get; }
         public ICommand PickPhotoCommand { get; }
 
-        Task TakePhoto() => GetPhoto(() => CrossMedia.Current.TakePhotoAsync(new StoreCameraMediaOptions { PhotoSize = PhotoSize.Small }));
-        Task PickPhoto() => GetPhoto(() => CrossMedia.Current.PickPhotoAsync(new PickMediaOptions { PhotoSize = PhotoSize.Small }));
+        Task TakePhoto() => GetPhoto(() => CrossMedia.Current.TakePhotoAsync(new StoreCameraMediaOptions { PhotoSize = PhotoSize.Small, SaveMetaData = false }));
+        Task PickPhoto() => GetPhoto(() => CrossMedia.Current.PickPhotoAsync(new PickMediaOptions { PhotoSize = PhotoSize.Small, SaveMetaData = false }));
 
         async Task GetPhoto(Func<Task<MediaFile>> getPhotoFunc)
         {
             IsEnabled = false;
+
+            Image = null;
+            Predictions = null;
 
             try
             {
                 var photo = await getPhotoFunc();
                 if (photo == null) return;
 
-                var results = await endpoint.PredictImageAsync(Guid.Parse(ApiKeys.ProjectId), photo.GetStream());
-
-                Predictions = results.Predictions
-                                     .Where(p => p.Probability > Probability)
-                                     .ToList();
 
                 Image = SKBitmap.Decode(photo.GetStream());
+                await PredictPhoto(photo);
+
+                IsEnabled = true;
                 await SayWhatYouSee();
             }
             catch (Exception ex)
@@ -95,6 +103,14 @@ namespace ObjectDetector
             {
                 IsEnabled = true;
             }
+        }
+
+        async Task PredictPhoto(MediaFile photo)
+        {
+            var results = await endpoint.PredictImageAsync(Guid.Parse(ApiKeys.ProjectId), photo.GetStream());
+            Predictions = results.Predictions
+                                 .Where(p => p.Probability > Probability)
+                                 .ToList();
         }
 
         async Task SayWhatYouSee()

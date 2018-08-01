@@ -70,6 +70,9 @@
     <PackageReference Include="Humanizer">
       <Version>2.4.2</Version>
     </PackageReference>
+    <PackageReference Include="Com.Airbnb.Xamarin.Forms.Lottie">
+      <Version>2.5.4</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
@@ -113,6 +116,9 @@
       <Project>{26E49636-4A53-4834-96B4-79C24EC00AD3}</Project>
       <Name>ObjectDetector</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="Assets\loader.json" />
   </ItemGroup>
  <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
 </Project>

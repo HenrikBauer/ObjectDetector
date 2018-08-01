@@ -164,6 +164,9 @@
     <PackageReference Include="Humanizer">
       <Version>2.4.2</Version>
     </PackageReference>
+    <PackageReference Include="Com.Airbnb.Xamarin.Forms.Lottie">
+      <Version>2.5.4</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
@@ -171,5 +174,8 @@
       <Project>{26E49636-4A53-4834-96B4-79C24EC00AD3}</Project>
       <Name>ObjectDetector</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="loader.json" />
   </ItemGroup>
 </Project>
