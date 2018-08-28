@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -28,6 +27,15 @@ namespace ObjectDetector
             {
                 ApiKey = ApiKeys.PredictionKey
             };
+        }
+
+        async Task PredictPhoto(MediaFile photo)
+        {
+            var results = await endpoint.PredictImageAsync(Guid.Parse(ApiKeys.ProjectId),
+                                                           photo.GetStream());
+            Predictions = results.Predictions
+                                 .Where(p => p.Probability > Probability)
+                                 .ToList();
         }
 
         SKBitmap image;
@@ -73,8 +81,8 @@ namespace ObjectDetector
         public ICommand TakePhotoCommand { get; }
         public ICommand PickPhotoCommand { get; }
 
-        Task TakePhoto() => GetPhoto(() => CrossMedia.Current.TakePhotoAsync(new StoreCameraMediaOptions { PhotoSize = PhotoSize.Small, SaveMetaData = false }));
-        Task PickPhoto() => GetPhoto(() => CrossMedia.Current.PickPhotoAsync(new PickMediaOptions { PhotoSize = PhotoSize.Small, SaveMetaData = false }));
+        Task TakePhoto() => GetPhoto(() => CrossMedia.Current.TakePhotoAsync(new StoreCameraMediaOptions { PhotoSize = PhotoSize.Small }));
+        Task PickPhoto() => GetPhoto(() => CrossMedia.Current.PickPhotoAsync(new PickMediaOptions { PhotoSize = PhotoSize.Small }));
 
         async Task GetPhoto(Func<Task<MediaFile>> getPhotoFunc)
         {
@@ -88,8 +96,7 @@ namespace ObjectDetector
                 var photo = await getPhotoFunc();
                 if (photo == null) return;
 
-
-                Image = SKBitmap.Decode(photo.GetStream());
+                Image = SKBitmap.Decode(photo.GetStreamWithImageRotatedForExternalStorage());
                 await PredictPhoto(photo);
 
                 IsEnabled = true;
@@ -103,14 +110,6 @@ namespace ObjectDetector
             {
                 IsEnabled = true;
             }
-        }
-
-        async Task PredictPhoto(MediaFile photo)
-        {
-            var results = await endpoint.PredictImageAsync(Guid.Parse(ApiKeys.ProjectId), photo.GetStream());
-            Predictions = results.Predictions
-                                 .Where(p => p.Probability > Probability)
-                                 .ToList();
         }
 
         async Task SayWhatYouSee()

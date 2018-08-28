@@ -112,24 +112,23 @@ namespace ObjectDetector
             var textWidth = textPaint.MeasureText(text);
             textPaint.TextSize = 0.9f * scaledBoxWidth * textPaint.TextSize / textWidth;
 
-            // Find the text bounds
             var textBounds = new SKRect();
             textPaint.MeasureText(text, ref textBounds);
 
             var xText = (startLeft + (scaledBoxWidth / 2)) - textBounds.MidX;
             var yText = (startTop + (scaledBoxHeight / 2)) + textBounds.MidY;
 
-            var blurPaint = new SKPaint
+            var paint = new SKPaint
             {
-                TextSize = textPaint.TextSize,
-                IsAntialias = true,
-                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 0.57735f * radius + 0.5f)
+                Style = SKPaintStyle.Fill,
+                Color = new SKColor(0, 0, 0, 120)
             };
 
-            canvas.DrawText(text,
-                            xText + xDrop,
-                            yText + yDrop,
-                            blurPaint);
+            var backgroundRect = textBounds;
+            backgroundRect.Offset(xText, yText);
+            backgroundRect.Inflate(10, 10);
+
+            canvas.DrawRoundRect(backgroundRect, 5, 5, paint);
 
             canvas.DrawText(text,
                             xText,
@@ -139,7 +138,6 @@ namespace ObjectDetector
 
         static void DrawBox(SKCanvas canvas, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
         {
-
             var strokePaint = new SKPaint
             {
                 IsAntialias = true,

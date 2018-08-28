@@ -7,7 +7,8 @@
              xmlns:lottie="clr-namespace:Lottie.Forms;assembly=Lottie.Forms" 
              ios:Page.UseSafeArea="true"
              x:Class="ObjectDetector.MainPage"
-             BackgroundColor="White">
+             BackgroundColor="White"
+             Title="Object Detector">
     <ContentPage.BindingContext>
         <local:MainViewModel/>
     </ContentPage.BindingContext>
