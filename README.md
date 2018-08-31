@@ -14,6 +14,5 @@ This sample app uses the [Prediction SDK](https://www.nuget.org/packages/Microso
 * Open the sample code and head to `ApiKeys.cs`. Add your prediction key and project id to this file.
 * Run the app, take a photo of the objects you've trained it on and see the results.
 
-![Toys identified in a photo](./Images/ToyDetected.jpg)
 
 You can read more on this service at https://aka.ms/XamObjectDetection.
