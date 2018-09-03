@@ -104,7 +104,9 @@ namespace ObjectDetector
             var textPaint = new SKPaint
             {
                 IsAntialias = true,
-                Color = SKColors.White
+                Color = SKColors.White,
+                Style = SKPaintStyle.Fill,
+                Typeface = SKTypeface.FromFamilyName("Arial")
             };
 
             var text = tag.Humanize();
@@ -161,7 +163,6 @@ namespace ObjectDetector
 
         static void DrawBorder(SKCanvas canvas, float startLeft, float startTop, float scaledBoxWidth, float scaledBoxHeight)
         {
-
             var strokePaint = new SKPaint
             {
                 IsAntialias = true,
